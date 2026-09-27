@@ -1,8 +1,8 @@
 (() => {
-  const base = "https://orbit.sh/releases/";
+  const base = "https://github.com/soumyachk101/OrbitCode-Release/releases/latest/download/";
   const releases = {
     macos: ["macos-arm64.dmg", "Download for macOS", "Apple silicon"],
-    windows: ["windows-x86_64.zip", "Download for Windows", "Windows x64 · Portable ZIP"],
+    windows: ["windows-x86_64.exe", "Download for Windows", "Windows x64 (.exe)"],
     linux: ["linux-x86_64.tar.gz", "Download for Linux", "Linux x64"],
     "linux-arm": ["linux-aarch64.tar.gz", "Download for Linux", "Linux ARM64"],
   };
