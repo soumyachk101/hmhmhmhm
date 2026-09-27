@@ -25,7 +25,7 @@ pub enum NoticeChipIcon {
 /// tiny copy button pinned to its top-right corner — failure payloads are
 /// meant to be pasted, not screenshotted) and the message below. The message WRAPS instead of truncating: failure payloads carry
 /// exit statuses and stderr, and a one-line ellipsis was exactly what made
-/// zeronsh/comet#95 undiagnosable from the screenshot. `warning` picks the
+/// orbit upstream#95 undiagnosable from the screenshot. `warning` picks the
 /// amber palette (amber-400/amber-200) over the default red
 /// (red-400/red-300). Callers chain their own chrome: the composer its
 /// id/dismiss click, the transcript `w_full().overflow_hidden()`.

@@ -25,14 +25,14 @@
 			path = Orbit;
 			sourceTree = "<group>";
 		};
-		A2000000000000000000G001 /* ZeronTests */ = {
+		A2000000000000000000G001 /* OrbitTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ZeronTests;
+			path = OrbitTests;
 			sourceTree = "<group>";
 		};
-		A3000000000000000000G001 /* ZeronUITests */ = {
+		A3000000000000000000G001 /* OrbitUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ZeronUITests;
+			path = OrbitUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,8 +69,8 @@
 
 /* Begin PBXFileReference section */
 		A1000000000000000000PR01 /* Orbit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orbit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A2000000000000000000PR01 /* ZeronTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZeronTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A3000000000000000000PR01 /* ZeronUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZeronUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000PR01 /* OrbitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrbitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3000000000000000000PR01 /* OrbitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrbitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,8 +88,8 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000G001 /* Orbit */,
-				A2000000000000000000G001 /* ZeronTests */,
-				A3000000000000000000G001 /* ZeronUITests */,
+				A2000000000000000000G001 /* OrbitTests */,
+				A3000000000000000000G001 /* OrbitUITests */,
 				A1000000000000000000G002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -98,8 +98,8 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000PR01 /* Orbit.app */,
-				A2000000000000000000PR01 /* ZeronTests.xctest */,
-				A3000000000000000000PR01 /* ZeronUITests.xctest */,
+				A2000000000000000000PR01 /* OrbitTests.xctest */,
+				A3000000000000000000PR01 /* OrbitUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,9 +130,9 @@
 			productReference = A1000000000000000000PR01 /* Orbit.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A2000000000000000000T001 /* ZeronTests */ = {
+		A2000000000000000000T001 /* OrbitTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A2000000000000000000C001 /* Build configuration list for PBXNativeTarget "ZeronTests" */;
+			buildConfigurationList = A2000000000000000000C001 /* Build configuration list for PBXNativeTarget "OrbitTests" */;
 			buildPhases = (
 				A2000000000000000000S001 /* Sources */,
 			);
@@ -142,18 +142,18 @@
 				A2000000000000000000D001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A2000000000000000000G001 /* ZeronTests */,
+				A2000000000000000000G001 /* OrbitTests */,
 			);
-			name = ZeronTests;
+			name = OrbitTests;
 			packageProductDependencies = (
 			);
-			productName = ZeronTests;
-			productReference = A2000000000000000000PR01 /* ZeronTests.xctest */;
+			productName = OrbitTests;
+			productReference = A2000000000000000000PR01 /* OrbitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		A3000000000000000000T001 /* ZeronUITests */ = {
+		A3000000000000000000T001 /* OrbitUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A3000000000000000000C001 /* Build configuration list for PBXNativeTarget "ZeronUITests" */;
+			buildConfigurationList = A3000000000000000000C001 /* Build configuration list for PBXNativeTarget "OrbitUITests" */;
 			buildPhases = (
 				A3000000000000000000S001 /* Sources */,
 			);
@@ -163,13 +163,13 @@
 				A3000000000000000000D001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A3000000000000000000G001 /* ZeronUITests */,
+				A3000000000000000000G001 /* OrbitUITests */,
 			);
-			name = ZeronUITests;
+			name = OrbitUITests;
 			packageProductDependencies = (
 			);
-			productName = ZeronUITests;
-			productReference = A3000000000000000000PR01 /* ZeronUITests.xctest */;
+			productName = OrbitUITests;
+			productReference = A3000000000000000000PR01 /* OrbitUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -202,8 +202,8 @@
 			projectRoot = "";
 			targets = (
 				A1000000000000000000T001 /* Orbit */,
-				A2000000000000000000T001 /* ZeronTests */,
-				A3000000000000000000T001 /* ZeronUITests */,
+				A2000000000000000000T001 /* OrbitTests */,
+				A3000000000000000000T001 /* OrbitUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -489,7 +489,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A2000000000000000000C001 /* Build configuration list for PBXNativeTarget "ZeronTests" */ = {
+		A2000000000000000000C001 /* Build configuration list for PBXNativeTarget "OrbitTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A2000000000000000000BC03 /* Debug */,
@@ -498,7 +498,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A3000000000000000000C001 /* Build configuration list for PBXNativeTarget "ZeronUITests" */ = {
+		A3000000000000000000C001 /* Build configuration list for PBXNativeTarget "OrbitUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A3000000000000000000BC03 /* Debug */,

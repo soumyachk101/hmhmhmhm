@@ -12,12 +12,12 @@ $root = Join-Path $PSScriptRoot ('../target/windows-lifecycle-' + [guid]::NewGui
 $root = [IO.Path]::GetFullPath($root)
 New-Item -ItemType Directory -Path $root | Out-Null
 
-if (-not ('ZeronWindowProbe' -as [type])) {
+if (-not ('OrbitWindowProbe' -as [type])) {
 Add-Type @'
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
-public static class ZeronWindowProbe {
+public static class OrbitWindowProbe {
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern int GetClassName(IntPtr hwnd, StringBuilder name, int count);
     [DllImport("user32.dll")]
@@ -60,9 +60,9 @@ try {
             if ($p.MainWindowHandle -eq 0) { throw "Run $run did not open a window within 25s" }
             $hwnd = $p.MainWindowHandle
             $class = [Text.StringBuilder]::new(256)
-            [void][ZeronWindowProbe]::GetClassName($hwnd, $class, $class.Capacity)
+            [void][OrbitWindowProbe]::GetClassName($hwnd, $class, $class.Capacity)
             [uint32]$owner = 0
-            [void][ZeronWindowProbe]::GetWindowThreadProcessId($hwnd, [ref]$owner)
+            [void][OrbitWindowProbe]::GetWindowThreadProcessId($hwnd, [ref]$owner)
             if ($owner -ne $p.Id -or $class.ToString() -eq 'ConsoleWindowClass') {
                 throw "Probe selected a non-application window (class=$class owner=$owner)"
             }

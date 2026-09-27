@@ -292,7 +292,11 @@ fn validate_release_override(value: &str) -> anyhow::Result<String> {
 /// The project's GitHub releases page — the advisory update strip opens this
 /// for unmanaged installs (source builds, hand-copied binaries), where no
 /// updater flow exists to drive.
-pub const RELEASES_PAGE: &str = "https://github.com/zeronsh/orbit/releases";
+pub const RELEASES_PAGE: &str = "https://github.com/soumyachk101/OrbitCode-Release/releases";
+
+/// Default GitHub Releases download endpoint for OrbitCode.
+pub const DEFAULT_RELEASES_URL: &str =
+    "https://github.com/soumyachk101/OrbitCode-Release/releases/latest/download";
 
 fn release_base(edge_url: &str) -> anyhow::Result<String> {
     if let Ok(url) = std::env::var("ORBIT_RELEASES_URL")
@@ -303,6 +307,9 @@ fn release_base(edge_url: &str) -> anyhow::Result<String> {
     #[cfg(windows)]
     if let Some(url) = windows::release_url()? {
         return Ok(url.trim_end_matches('/').to_owned());
+    }
+    if edge_url.is_empty() || edge_url == "https://edge.orbit.sh" {
+        return Ok(DEFAULT_RELEASES_URL.to_owned());
     }
     Ok(format!("{}/releases", edge_url.trim_end_matches('/')))
 }
@@ -1142,6 +1149,22 @@ mod tests {
         ] {
             assert!(validate_release_override(url).is_err(), "accepted {url}");
         }
+    }
+
+    #[test]
+    fn release_base_defaults_to_orbitcode_release() {
+        assert_eq!(
+            super::release_base("").unwrap(),
+            super::DEFAULT_RELEASES_URL
+        );
+        assert_eq!(
+            super::release_base("https://edge.orbit.sh").unwrap(),
+            super::DEFAULT_RELEASES_URL
+        );
+        assert_eq!(
+            super::release_base("https://custom.example.com").unwrap(),
+            "https://custom.example.com/releases"
+        );
     }
 
     #[test]

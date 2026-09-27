@@ -4,7 +4,7 @@ Control your coding agents (Claude Code, Codex, Cursor, Devin, Grok, Hermes, Pi,
 
 *English | [简体中文](README.zh-CN.md)*
 
-![Orbit driving a Claude Code session with a live branch diff sidebar](apps/landing/public/assets/app-screenshot.jpg)
+![Orbit driving a Claude Code session with a live branch diff sidebar](website/public/assets/app-screenshot.jpg)
 
 Every device runs a small engine that stores sessions on that device. A new installation starts in local-only mode without an account or a network connection.
 

@@ -263,7 +263,7 @@ fn orbit_dark() -> ThemeVariant {
         source: source(
             "orbit-dark",
             "native",
-            "https://github.com/zeronsh/comet",
+            "https://github.com/orbit upstream",
             "d138049",
             "MIT",
         ),
@@ -297,7 +297,7 @@ fn orbit_light() -> ThemeVariant {
         source: source(
             "orbit-light",
             "native",
-            "https://github.com/zeronsh/comet",
+            "https://github.com/orbit upstream",
             "d138049",
             "MIT",
         ),

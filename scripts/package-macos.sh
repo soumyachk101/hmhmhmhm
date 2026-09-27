@@ -28,6 +28,7 @@ rm -rf "$APP" "$DMG" "$APP_TARBALL"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 install -m 755 "$ROOT/target/release/orbit" "$APP/Contents/MacOS/orbit"
 sed "s/__VERSION__/$VERSION/" "$ROOT/dist/macos/Info.plist" >"$APP/Contents/Info.plist"
+printf 'APPL????' > "$APP/Contents/PkgInfo"
 mkdir -p "$APP/Contents/Resources/licenses/fonts"
 cp "$ROOT/crates/ui/assets/fonts/licenses/"* "$APP/Contents/Resources/licenses/fonts/"
 
@@ -46,12 +47,10 @@ rm -rf "$ICONSET"
 
 if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then
   # Hardened runtime + secure timestamp are both notarization requirements.
-  # (No --deep: Apple deprecated it; the bundle is a single Mach-O anyway.)
-  codesign --force --options runtime --timestamp --sign "$CODESIGN_IDENTITY" "$APP"
+  codesign --force --options runtime --timestamp --identifier sh.orbit.app --sign "$CODESIGN_IDENTITY" "$APP"
 else
-  # Ad-hoc signature so the app launches on Apple silicon (Gatekeeper still
-  # requires right-click → Open on first launch without notarization).
-  codesign --deep --force --sign - "$APP"
+  # Ad-hoc signature with canonical identifier so macOS recognizes the bundle
+  codesign --force --deep --sign - --identifier sh.orbit.app "$APP"
 fi
 
 # notarize <path>: submit to Apple and wait for the verdict. A rejection may
@@ -127,4 +126,7 @@ if $NOTARIZE; then
   notarize "$DMG"
   xcrun stapler staple "$DMG"
 fi
+UNVERSIONED_DMG="$OUT_DIR/Orbit.dmg"
+cp "$DMG" "$UNVERSIONED_DMG"
 echo "packaged: $DMG"
+echo "packaged: $UNVERSIONED_DMG"

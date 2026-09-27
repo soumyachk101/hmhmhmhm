@@ -4,7 +4,7 @@
 //! user's npm state in the hot path: a cold cache meant a multi-minute
 //! download while the chat showed "Working", and a broken one meant npm dying
 //! before the adapter ever ran — silently, with an errno-encoded exit code
-//! (254 = ENOENT, the zeronsh/comet#95 crash) that surfaced as an opaque
+//! (254 = ENOENT, the orbit upstream#95 crash) that surfaced as an opaque
 //! "harness protocol error". Instead, pinned adapter packages are installed
 //! ONCE into a orbit-owned prefix (`~/.orbit/adapters/<pkg>/<version>` on
 //! Unix, the local app-data directory on Windows), with its own npm cache
