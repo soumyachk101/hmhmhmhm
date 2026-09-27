@@ -79,49 +79,62 @@ fi
 tar -czf "$APP_TARBALL" -C "$OUT_DIR" Orbit.app
 echo "packaged: $APP_TARBALL"
 
-# The dmg presents the classic drag-into-Applications layout over the
-# ascii-hands artwork (committed renders from scripts/dmg-background.py).
-# dmgbuild writes the .DS_Store (background, icon view, icon positions)
-# directly — no Finder scripting, so it also works on headless CI runners.
-python3 -c 'import dmgbuild' 2>/dev/null ||
-  python3 -m pip install --quiet --user dmgbuild 2>/dev/null ||
-  python3 -m pip install --quiet --user --break-system-packages dmgbuild
+# Package the styled installer DMG.
+# Stages the app + Applications symlink together with the pre-baked window
+# styling from dist/macos (background, .DS_Store, volume icon), then builds
+# a compressed UDZO image via a read-write intermediate so the volume root
+# carries the custom-icon Finder flag.
+VOLNAME="Orbit"
+APP_BUNDLE_NAME="Orbit.app"
+BACKGROUND_ASSET="$ROOT/dist/macos/installer-background.tiff"
+DSSTORE_ASSET="$ROOT/dist/macos/installer-DS_Store.base64"
+VOLUME_ICON_SOURCE="$APP/Contents/Resources/orbit.icns"
 
-# Pair the 1x/2x background renders into a hidpi tiff so the artwork stays
-# crisp on retina displays.
-BG_TIFF="$OUT_DIR/dmg-background.tiff"
-tiffutil -cathidpicheck "$ROOT/dist/macos/dmg-background.png" \
-  "$ROOT/dist/macos/dmg-background@2x.png" -out "$BG_TIFF" >/dev/null 2>&1
+# Ensure no existing Orbit volume is mounted before staging
+hdiutil detach "/Volumes/$VOLNAME"* -force -quiet >/dev/null 2>&1 || true
 
-APP="$APP" DMG="$DMG" BG_TIFF="$BG_TIFF" python3 - <<'PY'
-import os
-import dmgbuild
+WORK_DIR="$(mktemp -d /tmp/orbit-dmg-XXXX)"
+STAGE_PATH="$WORK_DIR/dmg-root"
+DSSTORE_PATH="$WORK_DIR/DS_Store"
+RW_DMG_PATH="$WORK_DIR/orbit-rw.dmg"
+MOUNT_POINT="$WORK_DIR/mnt"
 
-app = os.environ["APP"]
-dmgbuild.build_dmg(
-    filename=os.environ["DMG"],
-    volume_name="Orbit",
-    settings={
-        "format": "UDZO",
-        "files": [app],
-        "symlinks": {"Applications": "/Applications"},
-        "icon": os.path.join(app, "Contents/Resources/orbit.icns"),
-        "background": os.environ["BG_TIFF"],
-        "show_status_bar": False,
-        "show_tab_view": False,
-        "show_toolbar": False,
-        "show_pathbar": False,
-        "show_sidebar": False,
-        "default_view": "icon-view",
-        # Window and icon geometry must match scripts/dmg-background.py.
-        "window_rect": ((200, 120), (660, 400)),
-        "icon_size": 104,
-        "text_size": 12,
-        "icon_locations": {"Orbit.app": (165, 195), "Applications": (495, 195)},
-    },
-)
-PY
-rm -f "$BG_TIFF"
+base64 -d < "$DSSTORE_ASSET" > "$DSSTORE_PATH" || { echo "Failed to decode $DSSTORE_ASSET" >&2; exit 1; }
+LC_ALL=C grep -a -q -- "/Volumes/$VOLNAME" "$DSSTORE_PATH" \
+  || { echo "The installer .DS_Store does not point its background at /Volumes/$VOLNAME" >&2; exit 1; }
+
+mkdir -p "$STAGE_PATH"
+ditto "$APP" "$STAGE_PATH/$APP_BUNDLE_NAME"
+ln -s /Applications "$STAGE_PATH/Applications"
+cp "$BACKGROUND_ASSET" "$STAGE_PATH/.background.tiff"
+cp "$VOLUME_ICON_SOURCE" "$STAGE_PATH/.VolumeIcon.icns"
+
+hdiutil create -volname "$VOLNAME" -srcfolder "$STAGE_PATH" -ov -format UDRW -fs HFS+ "$RW_DMG_PATH" >/dev/null
+
+mkdir -p "$MOUNT_POINT"
+hdiutil attach "$RW_DMG_PATH" -nobrowse -noverify -mountpoint "$MOUNT_POINT" >/dev/null
+cp "$DSSTORE_PATH" "$MOUNT_POINT/.DS_Store"
+
+# Volume root FinderInfo: kHasCustomIcon = 0x0400
+xattr -wx com.apple.FinderInfo \
+  "00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00" \
+  "$MOUNT_POINT" || true
+
+detached=0
+for _ in 1 2 3 4 5; do
+  if hdiutil detach "$MOUNT_POINT" -quiet >/dev/null 2>&1; then
+    detached=1
+    break
+  fi
+  sleep 1
+done
+if [ "$detached" -ne 1 ]; then
+  hdiutil detach "$MOUNT_POINT" -force >/dev/null 2>&1 || true
+fi
+
+rm -f "$DMG"
+hdiutil convert "$RW_DMG_PATH" -format UDZO -ov -o "$DMG" >/dev/null
+rm -rf "$WORK_DIR"
 if $NOTARIZE; then
   notarize "$DMG"
   xcrun stapler staple "$DMG"

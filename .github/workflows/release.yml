@@ -132,7 +132,7 @@ jobs:
           "GPUI_FXC_PATH=$($fxc.FullName)" >> $env:GITHUB_ENV
       - uses: Swatinem/rust-cache@v2
       - name: package portable app
-        run: ./scripts/package-windows.ps1 -ReleasesUrl "https://github.com/$env:GITHUB_REPOSITORY/releases/latest/download"
+        run: ./scripts/package-windows.ps1 -ReleasesUrl "https://github.com/soumyachk101/OrbitCode-Release/releases/latest/download"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-${{ runner.arch }}
