@@ -2,7 +2,11 @@
   const REPO = "soumyachk101/OrbitCode-Release";
   const RELEASES_PAGE = `https://github.com/${REPO}/releases`;
   const LATEST_DOWNLOAD = `${RELEASES_PAGE}/latest/download/`;
+
   const MAC_DIRECT = `${LATEST_DOWNLOAD}Orbit.dmg`;
+  const WIN_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.1-windows-x86_64.exe`;
+  const LINUX_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.1-linux-x86_64.tar.gz`;
+  const LINUX_ARM_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.1-linux-aarch64.tar.gz`;
 
   const ua = navigator.userAgent || "";
   const platform = navigator.userAgentData?.platform || navigator.platform || "";
@@ -15,7 +19,7 @@
   const applyLinks = (info) => {
     const { version, macUrl, winUrl, linuxUrl, linuxArmUrl } = info;
 
-    // Platform-specific links in the downloads section
+    // Platform-specific direct download buttons in downloads section
     const macLink = document.querySelector('[data-platform-download="macos"]');
     if (macLink) {
       macLink.href = macUrl || MAC_DIRECT;
@@ -24,79 +28,49 @@
 
     const winLink = document.querySelector('[data-platform-download="windows"]');
     if (winLink) {
-      if (winUrl) {
-        winLink.href = winUrl;
-        winLink.textContent = "Download";
-        const meta = winLink.parentElement?.querySelector(".dl-meta");
-        if (meta) meta.textContent = "x64 · executable (.exe)";
-      } else {
-        winLink.href = RELEASES_PAGE;
-        winLink.textContent = "Releases ↗";
-        const meta = winLink.parentElement?.querySelector(".dl-meta");
-        if (meta) meta.textContent = "x64 · Coming soon";
-      }
+      winLink.href = winUrl || WIN_DIRECT;
+      winLink.textContent = "Download";
+      const meta = winLink.parentElement?.querySelector(".dl-meta");
+      if (meta) meta.textContent = "x64 · executable (.exe)";
     }
 
     const linuxLink = document.querySelector('[data-platform-download="linux"]');
     if (linuxLink) {
-      if (linuxUrl) {
-        linuxLink.href = linuxUrl;
-        linuxLink.textContent = "Download";
-        const meta = linuxLink.parentElement?.querySelector(".dl-meta");
-        if (meta) meta.textContent = "x64 · tar.gz";
-      } else {
-        linuxLink.href = RELEASES_PAGE;
-        linuxLink.textContent = "Releases ↗";
-        const meta = linuxLink.parentElement?.querySelector(".dl-meta");
-        if (meta) meta.textContent = "x64 · Coming soon";
-      }
+      linuxLink.href = linuxUrl || LINUX_DIRECT;
+      linuxLink.textContent = "Download";
+      const meta = linuxLink.parentElement?.querySelector(".dl-meta");
+      if (meta) meta.textContent = "x64 · tar.gz";
     }
 
     const linuxArmLink = document.querySelector('[data-platform-download="linux-arm"]');
     if (linuxArmLink) {
-      if (linuxArmUrl) {
-        linuxArmLink.href = linuxArmUrl;
-        linuxArmLink.textContent = "Download";
-        const meta = linuxArmLink.parentElement?.querySelector(".dl-meta");
-        if (meta) meta.textContent = "arm64 · tar.gz";
-      } else {
-        linuxArmLink.href = RELEASES_PAGE;
-        linuxArmLink.textContent = "Releases ↗";
-        const meta = linuxArmLink.parentElement?.querySelector(".dl-meta");
-        if (meta) meta.textContent = "arm64 · Coming soon";
-      }
+      linuxArmLink.href = linuxArmUrl || LINUX_ARM_DIRECT;
+      linuxArmLink.textContent = "Download";
+      const meta = linuxArmLink.parentElement?.querySelector(".dl-meta");
+      if (meta) meta.textContent = "arm64 · tar.gz";
     }
 
-    // Hero, nav, and closing CTA buttons
-    let mainHref = "#downloads";
+    // Hero, nav, and closing CTA direct download buttons
+    let mainHref = MAC_DIRECT;
     let mainLabel = "Download";
-    let mainDetail = "Desktop app";
+    let mainDetail = "Apple silicon · dmg";
 
     if (os === "macos") {
       mainHref = macUrl || MAC_DIRECT;
       mainLabel = "Download for macOS";
       mainDetail = "Apple silicon · dmg";
     } else if (os === "windows") {
-      if (winUrl) {
-        mainHref = winUrl;
-        mainLabel = "Download for Windows";
-        mainDetail = "Windows x64 (.exe)";
-      } else {
-        mainHref = "#downloads";
-        mainLabel = "Download Orbit";
-        mainDetail = "macOS available · Windows soon";
-      }
-    } else if (os === "linux" || os === "linux-arm") {
-      const lUrl = os === "linux-arm" ? linuxArmUrl : linuxUrl;
-      if (lUrl) {
-        mainHref = lUrl;
-        mainLabel = "Download for Linux";
-        mainDetail = os === "linux-arm" ? "Linux ARM64" : "Linux x64";
-      } else {
-        mainHref = "#downloads";
-        mainLabel = "Download Orbit";
-        mainDetail = "macOS available · Linux soon";
-      }
+      mainHref = winUrl || WIN_DIRECT;
+      mainLabel = "Download for Windows";
+      mainDetail = "Windows x64 (.exe)";
+    } else if (os === "linux") {
+      mainHref = linuxUrl || LINUX_DIRECT;
+      mainLabel = "Download for Linux";
+      mainDetail = "Linux x64";
+    } else if (os === "linux-arm") {
+      mainHref = linuxArmUrl || LINUX_ARM_DIRECT;
+      mainLabel = "Download for Linux";
+      mainDetail = "Linux ARM64";
     }
 
     const nav = document.getElementById("nav-download");
@@ -127,24 +101,24 @@
     }
   };
 
-  // Safe fallback immediately so all buttons work without network latency
+  // Set direct downloads immediately so clicking always triggers file download
   applyLinks({
     version: "1.1.1",
     macUrl: MAC_DIRECT,
-    winUrl: null,
-    linuxUrl: null,
-    linuxArmUrl: null,
+    winUrl: WIN_DIRECT,
+    linuxUrl: LINUX_DIRECT,
+    linuxArmUrl: LINUX_ARM_DIRECT,
   });
 
-  // Query GitHub API for the latest release and its published assets
+  // Query GitHub API to get dynamic latest release assets if updated
   fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { credentials: "omit" })
     .then((r) => r.ok ? r.json() : Promise.reject())
     .then((release) => {
       if (!release || !Array.isArray(release.assets)) return;
       const tag = release.tag_name || "1.1.1";
+      const cleanVer = tag.replace(/^v/, "");
       const assets = release.assets;
 
-      // Find platform assets from the actual release
       const macAsset = assets.find((a) => a.name === "Orbit.dmg")
         || assets.find((a) => a.name.toLowerCase().endsWith(".dmg"));
       const winAsset = assets.find((a) => a.name.toLowerCase().endsWith(".exe"))
@@ -155,9 +129,9 @@
       applyLinks({
         version: tag,
         macUrl: macAsset ? macAsset.browser_download_url : MAC_DIRECT,
-        winUrl: winAsset ? winAsset.browser_download_url : null,
-        linuxUrl: linuxAsset ? linuxAsset.browser_download_url : null,
-        linuxArmUrl: linuxArmAsset ? linuxArmAsset.browser_download_url : null,
+        winUrl: winAsset ? winAsset.browser_download_url : `${LATEST_DOWNLOAD}orbit-${cleanVer}-windows-x86_64.exe`,
+        linuxUrl: linuxAsset ? linuxAsset.browser_download_url : `${LATEST_DOWNLOAD}orbit-${cleanVer}-linux-x86_64.tar.gz`,
+        linuxArmUrl: linuxArmAsset ? linuxArmAsset.browser_download_url : `${LATEST_DOWNLOAD}orbit-${cleanVer}-linux-aarch64.tar.gz`,
       });
     })
     .catch(() => {});
