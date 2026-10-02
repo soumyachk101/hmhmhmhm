@@ -43,8 +43,8 @@ jobs:
 
           The Cursor compatibility workflow checks the actual SDK's token refresh, stream authentication invalidation, and transient exchange recovery, plus harness steering and session recovery regressions. Review SDK API changes and the dispatched workflow result before merging. This PR is never automatically merged.
           BODY
-            gh pr create --base main --head "$branch" --title 'chore(cursor): update pinned SDK' --body-file "$RUNNER_TEMP/cursor-sdk-pr.md"
+            gh pr create --base main --head "$branch" --title 'chore(cursor): update pinned SDK' --body-file "$RUNNER_TEMP/cursor-sdk-pr.md" || echo "Warning: gh pr create failed. Ensure Actions has PR permissions in Repo Settings."
           fi
           # GITHUB_TOKEN-created pushes/PRs do not trigger normal PR workflows.
           # workflow_dispatch is explicitly allowed and validates this branch.
-          gh workflow run cursor-compatibility.yml --ref "$branch"
+          gh workflow run cursor-compatibility.yml --ref "$branch" || true

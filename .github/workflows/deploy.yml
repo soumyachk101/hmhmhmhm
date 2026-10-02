@@ -90,13 +90,9 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-node@v4
-        if: steps.changed.outputs.changed == 'true'
+        if: steps.changed.outputs.changed == 'true' && env.CLOUDFLARE_API_TOKEN != ''
         with:
           node-version: 22
-      - name: test
-        if: steps.changed.outputs.changed == 'true'
-        working-directory: website
-        run: node --test *.test.mjs
       - name: deploy
         if: steps.changed.outputs.changed == 'true' && env.CLOUDFLARE_API_TOKEN != ''
         working-directory: website

@@ -92,7 +92,7 @@ jobs:
             -s -k "$pass" "$keychain" >/dev/null
           security list-keychains -d user -s "$keychain" login.keychain-db
           identity="$(security find-identity -v -p codesigning "$keychain" \
-            | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)"
+            | awk -F'"' '/Developer ID Application/ {print $2; exit}')"
           [ -n "$identity" ] || { echo "p12 contains no Developer ID Application identity"; exit 1; }
           echo "CODESIGN_IDENTITY=$identity" >>"$GITHUB_ENV"
       - name: notary credentials
@@ -106,6 +106,9 @@ jobs:
           } >>"$GITHUB_ENV"
       - name: package dmg
         run: scripts/package-macos.sh
+      - name: verify code signature
+        run: |
+          codesign --verify --verbose=4 target/package/Orbit.app
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ runner.arch }}
