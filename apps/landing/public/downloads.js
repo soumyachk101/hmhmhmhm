@@ -4,9 +4,9 @@
   const LATEST_DOWNLOAD = `${RELEASES_PAGE}/latest/download/`;
 
   const MAC_DIRECT = `${LATEST_DOWNLOAD}Orbit.dmg`;
-  const WIN_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.1-windows-x86_64.exe`;
-  const LINUX_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.1-linux-x86_64.tar.gz`;
-  const LINUX_ARM_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.1-linux-aarch64.tar.gz`;
+  const WIN_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.2-windows-x86_64.exe`;
+  const LINUX_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.2-linux-x86_64.tar.gz`;
+  const LINUX_ARM_DIRECT = `${LATEST_DOWNLOAD}orbit-1.1.2-linux-aarch64.tar.gz`;
 
   const ua = navigator.userAgent || "";
   const platform = navigator.userAgentData?.platform || navigator.platform || "";
@@ -103,7 +103,7 @@
 
   // Set direct downloads immediately so clicking always triggers file download
   applyLinks({
-    version: "1.1.1",
+    version: "1.1.2",
     macUrl: MAC_DIRECT,
     winUrl: WIN_DIRECT,
     linuxUrl: LINUX_DIRECT,
@@ -115,7 +115,7 @@
     .then((r) => r.ok ? r.json() : Promise.reject())
     .then((release) => {
       if (!release || !Array.isArray(release.assets)) return;
-      const tag = release.tag_name || "1.1.1";
+      const tag = release.tag_name || "1.1.2";
       const cleanVer = tag.replace(/^v/, "");
       const assets = release.assets;
 
