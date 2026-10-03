@@ -32,6 +32,9 @@ printf 'APPL????' > "$APP/Contents/PkgInfo"
 mkdir -p "$APP/Contents/Resources/licenses/fonts"
 cp "$ROOT/crates/ui/assets/fonts/licenses/"* "$APP/Contents/Resources/licenses/fonts/"
 
+mkdir -p "$APP/Contents/Resources/licenses"
+cp "$ROOT/crates/voice/NOTICE.md" "$APP/Contents/Resources/licenses"/parakeet-v3.txt
+
 # Icon: iconset from the pre-masked macOS icon (squircle + margins + shadow
 # baked into dist/macos/icon-1024.png — sips can't alpha-mask, so the mask is
 # applied ahead of time; dist/orbit.png stays the full-bleed shared artwork).
@@ -47,7 +50,8 @@ rm -rf "$ICONSET"
 
 if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then
   # Hardened runtime + secure timestamp are both notarization requirements.
-  codesign --force --options runtime --timestamp --identifier sh.orbit.app --sign "$CODESIGN_IDENTITY" "$APP"
+  # (No --deep: Apple deprecated it; the bundle is a single Mach-O anyway.)
+  codesign --entitlements "$ROOT/dist/macos/Dictation.entitlements" --force --options runtime --timestamp --identifier sh.orbit.app --sign "$CODESIGN_IDENTITY" "$APP"
 else
   # Ad-hoc signature with canonical identifier so macOS recognizes the bundle
   codesign --force --deep --sign - --identifier sh.orbit.app "$APP"

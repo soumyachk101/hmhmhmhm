@@ -87,7 +87,7 @@ final class CoreSessionSource: SessionSource {
         // Working state is shown at the transcript tail (layout engine), not here.
         if let input = c.openInput {
             next.questions = (input.requestId, input.questions.map {
-                SessionChrome.Question(id: $0.id, header: $0.header, text: $0.question, options: $0.options, multiSelect: $0.multiSelect)
+                SessionChrome.Question(id: $0.id, header: $0.header, text: $0.question, options: $0.options, multiSelect: $0.multiSelect, prefill: $0.prefill, multiline: $0.multiline)
             })
         }
         next.queue = c.queue.map { q in
@@ -133,7 +133,9 @@ final class CoreSessionSource: SessionSource {
 
     func queueAction(_ id: String, _ action: QueueAction) {
         switch action {
-        case .sendNow: Task { _ = try? await handle.sendQueuedNow(id: id) }
+        // Steers text into the live turn (never interrupts it); only
+        // attachment rows stop the turn to send.
+        case .sendNow: Task { _ = try? await handle.deliverQueuedNow(id: id) }
         case .remove: Task { _ = try? await handle.removeQueued(id: id) }
         case .moveUp: _ = try? handle.moveQueuedBy(id: id, delta: -1)
         case .moveDown: _ = try? handle.moveQueuedBy(id: id, delta: 1)

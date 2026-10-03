@@ -152,6 +152,7 @@ orbit/
                                  # sockets ({s,k,to,from} frames)
     theme/        orbit-theme    # source-neutral theme schema + built-in/custom registry,
                                  # validation, provenance, and local VS Code compiler
+    voice/        orbit-voice    # desktop-local optional Parakeet model, capture and inference; no RPC/sync
     ui/           orbit-ui       # gpui app: shell, sidebar, conversation, composer,
                                  # terminal view, diff pane, settings, animation kit
   apps/

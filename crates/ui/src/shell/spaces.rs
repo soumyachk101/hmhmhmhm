@@ -460,7 +460,12 @@ mod pinned_session_tests {
     fn sidebar_unconfirmed_write_stops_the_queue_without_overwriting_observed_pins(
         cx: &mut gpui::TestAppContext,
     ) {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        // RPC completion (including channel closure during teardown) must wake
+        // GPUI on the deterministic test scheduler's owning thread.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
         let _guard = runtime.enter();
         let (engine, _requests, _replies) = pin_test_engine();
         let dir = tempfile::tempdir().unwrap();
@@ -502,7 +507,12 @@ mod pinned_session_tests {
     fn sidebar_optimistic_writes_preserve_newer_edits_and_watch_state_on_failure(
         cx: &mut gpui::TestAppContext,
     ) {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        // RPC completion (including channel closure during teardown) must wake
+        // GPUI on the deterministic test scheduler's owning thread.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
         let _guard = runtime.enter();
         let (engine, mut requests, _replies) = pin_test_engine();
         let dir = tempfile::tempdir().unwrap();
@@ -581,7 +591,12 @@ mod pinned_session_tests {
     fn sidebar_write_acknowledgements_ignore_older_watches_and_previous_operations(
         cx: &mut gpui::TestAppContext,
     ) {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        // RPC completion (including channel closure during teardown) must wake
+        // GPUI on the deterministic test scheduler's owning thread.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
         let _guard = runtime.enter();
         let (engine, _requests, _replies) = pin_test_engine();
         let dir = tempfile::tempdir().unwrap();
@@ -622,7 +637,12 @@ mod pinned_session_tests {
     fn sidebar_write_replies_cannot_cross_profile_or_engine_boundaries(
         cx: &mut gpui::TestAppContext,
     ) {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        // RPC completion (including channel closure during teardown) must wake
+        // GPUI on the deterministic test scheduler's owning thread.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
         let _guard = runtime.enter();
         let dir = tempfile::tempdir().unwrap();
         let window = pin_test_shell(cx, dir.path());
@@ -1604,6 +1624,130 @@ mod pinned_session_tests {
         });
     }
 
+    #[gpui::test]
+    fn archive_pill_follows_a_still_pointer_down_the_list(cx: &mut gpui::TestAppContext) {
+        use super::*;
+
+        struct SidebarHost(Entity<Shell>);
+        impl Render for SidebarHost {
+            fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+                self.0.update(cx, |shell, cx| {
+                    div()
+                        .w(px(280.0))
+                        .h(px(800.0))
+                        .child(shell.render_chat_sidebar(&Theme::default(), cx))
+                })
+            }
+        }
+        let dir = tempfile::tempdir().unwrap();
+        cx.update(|cx| {
+            gpui_base::init(cx);
+            cx.set_global(Theme::default());
+            crate::app_menus::init(cx);
+            crate::history::init(
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                cx,
+            );
+        });
+        let (host, cx) = cx.add_window_view(|_, cx| {
+            SidebarHost(cx.new(|cx| {
+                let state = cx.new(|_| AppState::new());
+                let mut shell = Shell::new(
+                    state,
+                    EngineBootConfig {
+                        data_dir: dir.path().into(),
+                        ipc_port: 0,
+                        edge_url: "http://127.0.0.1:1".into(),
+                        edge_token: None,
+                        org_id: None,
+                        workos_client_id: None,
+                        default_harness: orbit_proto::HarnessId::Mock,
+                    },
+                    cx,
+                );
+                shell.settings.sidebar_organization = SidebarOrganization::InOneList;
+                shell.reduced_motion = true;
+                shell.state.update(cx, |state, _| {
+                    state.workspace_scope = Some(WorkspaceScope::Local);
+                    state.local_device_id = Some("local".into());
+                    state.chats = ["a", "b", "c"]
+                        .into_iter()
+                        .enumerate()
+                        .map(|(ix, id)| {
+                            serde_json::from_value(serde_json::json!({
+                                "id": id, "title": id, "deviceId": "local", "archived": false,
+                                "createdAt": Utc::now() - chrono::Duration::minutes(ix as i64),
+                            }))
+                            .unwrap()
+                        })
+                        .collect();
+                });
+                shell
+            }))
+        });
+        let shell = host.read_with(cx, |host, _| host.0.clone());
+        let order = shell.update(cx, |shell, cx| shell.sidebar_visible_order(cx));
+        assert_eq!(order, ids(&["a", "b", "c"]));
+        let state = shell.read_with(cx, |shell, _| shell.state.clone());
+
+        let row = cx.debug_bounds("chat-a").unwrap();
+        cx.simulate_mouse_move(row.center(), None, gpui::Modifiers::default());
+        let pointer = cx.debug_bounds("chat-a-corner").unwrap().center();
+        cx.simulate_mouse_move(pointer, None, gpui::Modifiers::default());
+        for (archived, next) in [
+            ("a", Some(("b", "chat-b-corner"))),
+            ("b", Some(("c", "chat-c-corner"))),
+            ("c", None),
+        ] {
+            cx.simulate_click(pointer, gpui::Modifiers::default());
+            shell.read_with(cx, |shell, _| {
+                assert!(shell.chat_hover_resync);
+                assert_eq!(
+                    shell.chat_status_hover.as_deref(),
+                    Some(format!("chat-{archived}").as_str())
+                );
+            });
+            // The engine round-trip lands; the next row slides up under the
+            // unmoved pointer.
+            state.update(cx, |state, cx| {
+                state
+                    .chats
+                    .iter_mut()
+                    .find(|chat| chat.id == archived)
+                    .unwrap()
+                    .archived = true;
+                cx.notify();
+            });
+            cx.run_until_parked();
+            shell.update(cx, |shell, cx| {
+                shell.sidebar_resort.clear();
+                shell.sidebar_new_keys.clear();
+                cx.notify();
+            });
+            cx.run_until_parked();
+            // Its Archived-section copy shares the row key and must not stay lit.
+            assert_eq!(
+                crate::motion::hover_t(&format!("chat-{archived}-hover")),
+                0.0
+            );
+            let expected = next.map(|(next, _)| format!("chat-{next}"));
+            shell.read_with(cx, |shell, _| {
+                assert_eq!(shell.chat_status_hover, expected);
+            });
+            if let Some((_, corner)) = next {
+                assert!(cx.debug_bounds(corner).unwrap().contains(&pointer));
+            }
+        }
+
+        // Real pointer movement hands hover back to gpui's own tracking.
+        let row = cx.debug_bounds("chat-c").unwrap();
+        cx.simulate_mouse_move(row.center(), None, gpui::Modifiers::default());
+        shell.read_with(cx, |shell, _| assert!(!shell.chat_hover_resync));
+    }
+
     #[test]
     fn missing_duplicate_and_archived_pins_do_not_disturb_regular_rows() {
         let recency = ids(&["b", "a", "c"]);
@@ -1929,6 +2073,10 @@ const SIDEBAR_DISCLOSURE_SECTION_HEIGHT: f32 =
     SIDEBAR_SECTION_GAP + SIDEBAR_DISCLOSURE_HEADER_HEIGHT;
 pub(super) const SIDEBAR_DISCLOSURE_TWEEN_GRACE: std::time::Duration =
     std::time::Duration::from_millis(120);
+/// The Archived shelf shows this many rows, then "Show more" pages by
+/// [`ARCHIVED_PAGE_ROWS`].
+const ARCHIVED_INITIAL_ROWS: usize = 10;
+const ARCHIVED_PAGE_ROWS: usize = 25;
 
 /// Put this machine's device group first without disturbing the recency-based
 /// order of any remote groups. A targeted promotion is more truthful than a
@@ -4154,6 +4302,127 @@ impl Shell {
         visible
     }
 
+    /// The group a chat's row sits under when the sidebar groups by device or
+    /// by project; `None` in one list.
+    fn sidebar_group_key(&self, chat: &orbit_proto::Chat) -> Option<String> {
+        match self.settings.sidebar_organization {
+            SidebarOrganization::ByDevice => Some(chat.device_id.clone()),
+            SidebarOrganization::ByProject => Some(
+                chat.space_id
+                    .clone()
+                    .unwrap_or_else(|| format!("home:{}", chat.device_id)),
+            ),
+            SidebarOrganization::InOneList => None,
+        }
+    }
+
+    /// A device/project group's key in `sidebar_collapsed_groups`.
+    fn sidebar_group_collapse_key(&self, group: &str) -> String {
+        let organization = match self.settings.sidebar_organization {
+            SidebarOrganization::ByDevice => "device",
+            SidebarOrganization::ByProject => "project",
+            SidebarOrganization::InOneList => "list",
+        };
+        format!("{organization}:{group}")
+    }
+
+    /// Open whatever hides `chat_id`'s sidebar row — the sidebar itself, the
+    /// Pinned / Sessions / Archived disclosure, its custom section or group,
+    /// the Archived page — so an inline rename has a row to draw on. Each
+    /// disclosure opens with its usual motion. False when the row cannot be
+    /// shown: the project filter hides it (the filter is the user's to
+    /// clear), or a synced section could not be expanded. Either way the
+    /// sidebar notice says why.
+    pub(super) fn reveal_sidebar_chat(&mut self, chat_id: &str, cx: &mut Context<Self>) -> bool {
+        let (active, archived) = {
+            let state = self.state.read(cx);
+            let active = state
+                .sidebar_chats(Utc::now(), self.settings.space_filter.as_deref())
+                .into_iter()
+                .find(|(_, chat)| chat.id == chat_id)
+                .map(|(_, chat)| chat.clone());
+            let archived = self
+                .archived_sidebar_chats(cx)
+                .iter()
+                .position(|chat| chat.id == chat_id);
+            (active, archived)
+        };
+        if active.is_none() && archived.is_none() {
+            self.sidebar_notice = Some("Clear the project filter to rename this session".into());
+            return false;
+        }
+        if let Some(chat) = &active {
+            if self.active_sidebar_pins(cx).contains(&chat.id) {
+                if !self.pinned_open {
+                    self.pinned_open = true;
+                    self.queue_sidebar_reveal("pinned");
+                }
+            } else if let Some(section) = self
+                .active_sidebar_sections(cx)
+                .into_iter()
+                .find(|section| section.session_ids.contains(&chat.id))
+            {
+                if section.collapsed {
+                    if !self.change_sidebar_section(
+                        orbit_proto::SidebarSectionChange::Collapse {
+                            id: section.id.clone(),
+                            collapsed: false,
+                        },
+                        cx,
+                    ) {
+                        return false;
+                    }
+                    self.queue_sidebar_reveal(&format!("custom:{}", section.id));
+                }
+            } else if let Some(group) = self.sidebar_group_key(chat) {
+                let collapse_key = self.sidebar_group_collapse_key(&group);
+                if self.sidebar_collapsed_groups.remove(&collapse_key) {
+                    self.queue_sidebar_reveal(&format!("group:{collapse_key}"));
+                }
+            } else if !self.sessions_open {
+                self.sessions_open = true;
+                self.queue_sidebar_reveal("sessions");
+            }
+        } else if let Some(index) = archived {
+            if !self.archived_open {
+                self.archived_open = true;
+                self.archived_shown = ARCHIVED_INITIAL_ROWS;
+                self.queue_sidebar_reveal("archived");
+            }
+            // Page the shelf just far enough to include the row, in the
+            // same steps "Show more" takes.
+            let shown = self.archived_shown.max(ARCHIVED_INITIAL_ROWS);
+            if index >= shown {
+                self.archived_shown = ARCHIVED_INITIAL_ROWS
+                    + (index + 1 - ARCHIVED_INITIAL_ROWS).div_ceil(ARCHIVED_PAGE_ROWS)
+                        * ARCHIVED_PAGE_ROWS;
+            }
+        }
+        if self.settings.sidebar_collapsed {
+            self.toggle_sidebar(cx);
+        }
+        cx.notify();
+        true
+    }
+
+    /// Mark a disclosure opened for a reveal: its motion starts on the next
+    /// render, where the body height is known. Like a header click, it
+    /// replaces the resort glide for this movement.
+    fn queue_sidebar_reveal(&mut self, key: &str) {
+        self.sidebar_reveal_motions.insert(key.to_owned());
+        self.sidebar_prev_order.clear();
+        self.sidebar_resort.clear();
+        self.sidebar_new_keys.clear();
+    }
+
+    /// Start a revealed disclosure's opening motion now that its height is
+    /// known.
+    pub(super) fn begin_queued_sidebar_reveal(&mut self, key: &str, open: bool, body_height: f32) {
+        if open && self.sidebar_reveal_motions.remove(key) {
+            self.begin_sidebar_disclosure_motion(key, 0.0, body_height);
+        }
+    }
+
     /// Shared metadata and visibility settings for active and archived sessions.
     fn sidebar_chat_data(
         &self,
@@ -4189,16 +4458,13 @@ impl Shell {
             .change_request_for_chat(&chat)
             .cloned()
             .filter(|_| self.settings.sidebar_show_pull_request);
-        let group = match self.settings.sidebar_organization {
-            SidebarOrganization::ByDevice => Some((chat.device_id.clone(), device)),
-            SidebarOrganization::ByProject => Some((
-                chat.space_id
-                    .clone()
-                    .unwrap_or_else(|| format!("home:{}", chat.device_id)),
-                project,
-            )),
-            SidebarOrganization::InOneList => None,
-        };
+        let group = self.sidebar_group_key(&chat).map(|key| {
+            let label = match self.settings.sidebar_organization {
+                SidebarOrganization::ByDevice => device,
+                _ => project,
+            };
+            (key, label)
+        });
         ActiveChatRow {
             status,
             chat: chat.clone(),
@@ -4627,12 +4893,7 @@ impl Shell {
                     continue;
                 }
             }
-            let organization = match self.settings.sidebar_organization {
-                SidebarOrganization::ByDevice => "device",
-                SidebarOrganization::ByProject => "project",
-                SidebarOrganization::InOneList => "list",
-            };
-            let collapse_key = format!("{organization}:{key}");
+            let collapse_key = self.sidebar_group_collapse_key(&key);
             let motion_key = format!("group:{collapse_key}");
             let collapsed = self.sidebar_collapsed_groups.contains(&collapse_key);
             let row_count = rendered_rows.len();
@@ -4644,6 +4905,7 @@ impl Shell {
                     .map(|(_, height, _)| *height)
                     .sum::<f32>()
                 + SIDEBAR_LIST_GAP * row_count.saturating_sub(1) as f32;
+            self.begin_queued_sidebar_reveal(&motion_key, !collapsed, body_height);
             let body = div()
                 .w_full()
                 .flex()
@@ -4720,6 +4982,7 @@ impl Shell {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let open = self.pinned_open;
+        self.begin_queued_sidebar_reveal("pinned", open, body_height);
         let label = if open {
             "Pinned".into()
         } else {
@@ -4800,6 +5063,7 @@ impl Shell {
             return content;
         }
         let open = self.sessions_open;
+        self.begin_queued_sidebar_reveal("sessions", open, body_height);
         let label = if open {
             "Sessions".into()
         } else {
@@ -4865,6 +5129,24 @@ impl Shell {
             .into_any_element()
     }
 
+    /// The Archived shelf's chats under the project filter, in sidebar order.
+    fn archived_sidebar_chats(&self, cx: &App) -> Vec<orbit_proto::Chat> {
+        let filter = self.settings.space_filter.as_deref();
+        let mut rows: Vec<orbit_proto::Chat> = self
+            .state
+            .read(cx)
+            .chats
+            .iter()
+            // Spawned children stay out of the Archived section too — the
+            // same top-level rule as `visible_chats`.
+            .filter(|c| c.archived && c.parent_chat_id.is_none())
+            .filter(|chat| filter.is_none_or(|space_id| chat.space_id.as_deref() == Some(space_id)))
+            .cloned()
+            .collect();
+        rows.sort_by(|left, right| compare_sidebar_chats(self.settings.sidebar_sort, left, right));
+        rows
+    }
+
     /// Archived sessions share active-row data and layout, with a restore action.
     /// The shelf starts with ten sessions and pages by 25.
     pub(super) fn render_archived_section(
@@ -4872,26 +5154,10 @@ impl Shell {
         theme: &Theme,
         cx: &mut Context<Self>,
     ) -> Option<AnyElement> {
-        const INITIAL: usize = 10;
-        const PAGE: usize = 25;
+        const INITIAL: usize = ARCHIVED_INITIAL_ROWS;
+        const PAGE: usize = ARCHIVED_PAGE_ROWS;
         let now = Utc::now();
-        let filter = self.settings.space_filter.clone();
-        let mut rows: Vec<orbit_proto::Chat> = {
-            let state = self.state.read(cx);
-            state
-                .chats
-                .iter()
-                // Spawned children stay out of the Archived section too — the
-                // same top-level rule as `visible_chats`.
-                .filter(|c| c.archived && c.parent_chat_id.is_none())
-                .filter(|chat| match &filter {
-                    Some(space_id) => chat.space_id.as_deref() == Some(space_id.as_str()),
-                    None => true,
-                })
-                .cloned()
-                .collect()
-        };
-        rows.sort_by(|left, right| compare_sidebar_chats(self.settings.sidebar_sort, left, right));
+        let rows = self.archived_sidebar_chats(cx);
         if rows.is_empty() {
             return None;
         }
@@ -4934,6 +5200,7 @@ impl Shell {
             } else {
                 0.0
             };
+        self.begin_queued_sidebar_reveal("archived", open, body_height);
         // Match Pinned: a muted label with a right-aligned disclosure chevron.
         // The count only shows while collapsed.
         let label: SharedString = if open {

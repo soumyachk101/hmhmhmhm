@@ -6,4 +6,6 @@ resampling. It preserves the artwork's transparency.
 
 `apps/orbit/build.rs` compiles `orbit.rc` into the Windows executable for
 both debug and release builds. Resource ID 1 is required by GPUI's Windows
-icon loader. No installer or adjacent image file is needed at runtime.
+icon loader. No adjacent image file is needed at runtime; the installer
+(`orbit.iss`) uses the same `orbit.ico` for its own window and the uninstall
+entry.

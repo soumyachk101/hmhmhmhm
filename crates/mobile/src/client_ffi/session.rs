@@ -194,6 +194,8 @@ pub struct UserInputQuestion {
     pub question: String,
     pub options: Vec<String>,
     pub multi_select: bool,
+    pub prefill: Option<String>,
+    pub multiline: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Record)]
@@ -333,6 +335,8 @@ impl From<&zc::ComposerState> for ComposerState {
                         question: q.question.clone(),
                         options: q.options.clone(),
                         multi_select: q.multi_select,
+                        prefill: q.prefill.clone(),
+                        multiline: q.multiline,
                     })
                     .collect(),
             }),
@@ -615,6 +619,13 @@ impl SessionHandle {
     pub async fn send_queued_now(&self, id: String) -> CoreResult<bool> {
         let inner = self.inner.clone();
         on_runtime(async move { inner.send_queued_now(&id).await }).await
+    }
+
+    /// A row's primary action: steer text into the live turn (never
+    /// interrupts); attachments send now.
+    pub async fn deliver_queued_now(&self, id: String) -> CoreResult<bool> {
+        let inner = self.inner.clone();
+        on_runtime(async move { inner.deliver_queued_now(&id).await }).await
     }
 
     /// Remove a queued row (applied locally after the host acks).

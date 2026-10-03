@@ -543,11 +543,26 @@ async fn mcp_injection_reaches_sdk_on_create_and_resume_with_fresh_identity() {
             &std::fs::read(fixture.dir.path().join("mcp-options.json")).unwrap(),
         )
         .unwrap();
-        assert_eq!(options["orbit"]["type"], "stdio");
-        assert_eq!(options["orbit"]["command"], "/path with spaces/orbit");
-        assert_eq!(options["orbit"]["args"], serde_json::json!(["mcp"]));
-        assert_eq!(options["orbit"]["env"]["ORBIT_CHAT_ID"], chat);
-        assert_eq!(options["orbit"]["env"]["ORBIT_IPC_PORT"], "27699");
+        assert_eq!(options["mcpServers"]["orbit"]["type"], "stdio");
+        assert_eq!(
+            options["mcpServers"]["orbit"]["command"],
+            "/path with spaces/orbit"
+        );
+        assert_eq!(
+            options["mcpServers"]["orbit"]["args"],
+            serde_json::json!(["mcp"])
+        );
+        assert_eq!(options["mcpServers"]["orbit"]["env"]["ORBIT_CHAT_ID"], chat);
+        assert_eq!(
+            options["mcpServers"]["orbit"]["env"]["ORBIT_IPC_PORT"],
+            "27699"
+        );
+        // Never "project"/"all": the SDK skips MCP approvals, so a repo's
+        // .cursor/mcp.json would run unprompted.
+        assert_eq!(
+            options["settingSources"],
+            serde_json::json!(["user", "team", "mdm", "plugins"])
+        );
     }
 }
 

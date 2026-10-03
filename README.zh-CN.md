@@ -15,7 +15,7 @@ curl -fsSL https://orbit.sh/install.sh | sh
 orbit status
 ```
 
-安装脚本会马上把守护进程拉起来，重启之后也会自己回来。不需要登录，也不需要配置同步。
+安装脚本会马上把守护进程拉起来，重启之后也会自己回来。不需要登录，也不需要配置同步。它还会把 Orbit 加入应用启动器：在 `~/.local/share`（或 `$XDG_DATA_HOME`）下写入用户级的 `orbit.desktop` 和图标，每次运行安装脚本都会重写。
 
 日常命令：
 
@@ -49,6 +49,6 @@ orbit daemon start
 
 macOS 上用桌面版发行包，或者从源码构建 `orbit`，再运行 `orbit daemon install` 装上 launchd 服务。
 
-想参与开发，或者好奇它怎么跑起来的？[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/zeronsh/orbit)，也可以看 [ARCHITECTURE.md](ARCHITECTURE.md)。
+想参与开发，或者好奇它怎么跑起来的？[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/soumyachk101/Orbit-Code)，也可以看 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 采用 [MIT License](LICENSE)。

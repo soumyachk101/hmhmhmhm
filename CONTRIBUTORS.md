@@ -49,6 +49,7 @@ Useful knobs for exercising the UI without a real agent or account:
 | `ORBIT_HARNESS=mock` | Offers the mock harness, which streams canned turns |
 | `ORBIT_MOCK_SUBAGENT=1` | Mock turns spawn subagents |
 | `ORBIT_MOCK_THINKING=1` | Mock turns include markdown-heavy thinking |
+| `ORBIT_MOCK_TODO=1` | Mock turns work through an 8-item checklist (pair with `ORBIT_MOCK_DELAY_MS=900` to watch the todo panel) |
 
 ## Tests
 
